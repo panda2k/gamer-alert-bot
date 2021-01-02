@@ -1,7 +1,7 @@
 const Discord = require('discord.js')
 
 const client = new Discord.Client()
-const alertChannelId = '735581037966655592'
+const alertChannelId = '735948172488081658'
 const imgLink = 'https://i.imgur.com/xGtV8Lm.png'
 
 client.on('ready', () => {
