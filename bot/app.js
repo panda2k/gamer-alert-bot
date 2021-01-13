@@ -11,7 +11,6 @@ client.on('ready', () => {
 })
 
 client.on('presenceUpdate', (oldMember, newMember) => {
-    console.log(newMember.member.displayName)
     let currentTime = new Date().getTime() / 1000 // time stamp in seconds
 
     for (i = 0; i < newMember.activities.length; i++) {
@@ -43,8 +42,16 @@ client.on('presenceUpdate', (oldMember, newMember) => {
             })
         }
     }
+    console.log(newMember.member.displayName)
+    console.log('!!! OLD !!!')
+    try {
+        console.log(oldMember.activities)
+    } catch (error) {
+        
+    }
+    console.log('!!! NEW !!!')
     console.log(newMember.activities)
-    console.log(userActivityHistory)
+    //console.log(userActivityHistory)
 })
 
 client.login(process.env.GAMER_BOT_SECRET)
