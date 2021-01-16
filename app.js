@@ -1,57 +1,65 @@
 const Discord = require('discord.js')
+const GamerAlert = require('./gameralert')
 
 const client = new Discord.Client()
-const alertChannelId = process.env.OUTPUT_CHANNEL_ID
-const imgLink = 'https://i.imgur.com/xGtV8Lm.png'
-
-var userActivityHistory = {}
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}`)
 })
 
-client.on('presenceUpdate', (oldMember, newMember) => {
-    let currentTime = new Date().getTime() / 1000 // time stamp in seconds
+client.on('message', async message => {
+    let guildId = message.guild.id
+    let prefix;
 
-    for (i = 0; i < newMember.activities.length; i++) {
-        let currentApp = newMember.activities[i].name
-        if (currentApp == 'League of Legends' || currentApp == 'VALORANT') {
-            for (j = 0; j < oldMember.activities.length; j++) {
-                if (oldMember.activities[j].name == 'League of Legends' || oldMember.activities[j].name == 'VALORANT') {
-                    return // activity name didn't change but other metadata did
+    await GamerAlert.getServer(guildId)
+        .then(result => {
+            prefix = result.commandPrefix
+        })
+        .catch(async error => {
+            if (error.response) {
+                if (error.response.status == 404) {
+                    await GamerAlert.addServer(guildId)
+                        .then(() => {
+                            prefix = '?'
+                            return
+                        })
                 }
             }
-            try {
-                if (currentTime - userActivityHistory[newMember.member.id].timeStamp < 120) { // check if status just temporarily dissapeared 
-                    if (currentApp == userActivityHistory[newMember.member.id].activity) {
-                        return
-                    }
-                } 
-            } catch (error) {
-                if (!(error instanceof TypeError)) {
-                    console.log(error)
-                }
-            }
+        })
 
-            userActivityHistory[newMember.member.id] = { 'timeStamp': currentTime, 'activity': currentApp }
+    if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-            client.channels.fetch(alertChannelId)
-            .then(async channel => {
-                await channel.send('', {files: [imgLink]})
-                await channel.send(`<@${newMember.member.id}> is now ignoring his need for fresh air by playing ${currentApp}`)
-            })
+    const args = message.content.slice(prefix.length).trim().split(' ')
+    const command = args.shift().toLowerCase()
+
+    if (command == 'help') {
+        message.channel.send('help message')
+    } else if (command == 'register') {
+        if (args.length == 0) {
+            message.channel.send('Missing arguments. Follow this command format: `?register <league_name>`')
+            return
         }
+
+        await GamerAlert.registerUser(message.author.id, args[0])
+            .then(async () => {
+                await GamerAlert.addUserToServer(guildId, message.author.id)
+                    .then(() => {
+                        message.channel.send('Registered')
+                    })
+            })
+            .catch(error => {
+                if (error.response) {
+                    console.log(error.response.data.error)
+                    message.channel.send(error.response.data.error)
+                } else {
+                    message.channel.send(error)
+                }
+            })
+    } 
+    else {
+        message.channel.send('Unknown command')
     }
-    console.log(newMember.member.displayName)
-    console.log('!!! OLD !!!')
-    try {
-        console.log(oldMember.activities)
-    } catch (error) {
-        
-    }
-    console.log('!!! NEW !!!')
-    console.log(newMember.activities)
-    //console.log(userActivityHistory)
+
 })
 
 client.login(process.env.GAMER_BOT_SECRET)
