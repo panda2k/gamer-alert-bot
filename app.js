@@ -33,6 +33,8 @@ client.on('message', async message => {
 
     if (!message.content.startsWith(prefix) || message.author.bot) return;
 
+    if (message.content.indexOf('?') != message.content.lastIndexOf('?')) return;
+
     const args = message.content.slice(prefix.length).trim().split(' ')
     const command = args.shift().toLowerCase()
 
@@ -97,7 +99,7 @@ client.on('message', async message => {
                 }
             })
     }
-    else {
+    else if (command) {
         message.channel.send('Unknown command')
     }
 
