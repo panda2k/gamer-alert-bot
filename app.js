@@ -98,6 +98,22 @@ client.on('message', async message => {
                     message.channel.send(error)
                 }
             })
+    } else if (command == 'alertimage') {
+        if (args.length != 1) {
+            message.channel.send('Invalid arguments. Correct format: ?alertimage <image_url>')
+            return
+        }
+        await GamerAlert.updateServer(guildId, null, null, args[0])
+            .then(() => {
+                message.channel.send('Successfully updated alert image url')
+            })
+            .catch (error => {
+                if (error.response) {
+                    message.channel.send(error.response.data.error)
+                } else {
+                    message.channel.send(error)
+                }
+            })
     }
     else if (command) {
         message.channel.send('Unknown command')
