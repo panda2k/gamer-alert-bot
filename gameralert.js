@@ -14,7 +14,8 @@ const getServer = async (serverId) => (await requestClient.get(`/servers/${serve
 
 const addServer = async (serverId) => (await requestClient.post('/servers', { id: serverId })).data
 
-const registerUser = async(discordId, leagueName) => (await requestClient.post('/users', { discordId: discordId, leagueName: leagueName })).data
+// return whole response with registerUser because the status code is important for determining whether use was updated or created
+const registerUser = async(discordId, leagueName) => (await requestClient.post('/users', { discordId: discordId, leagueName: leagueName }))
 
 const addUserToServer = async(serverId, discordId) => (await requestClient.post(`/servers/${serverId}/users`, { discordId: discordId })).data
 

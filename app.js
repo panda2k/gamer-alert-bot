@@ -88,11 +88,11 @@ client.on('message', async message => {
         }
 
         await GamerAlert.registerUser(message.author.id, args[0])
-            .then(async () => {
-                await GamerAlert.addUserToServer(guildId, message.author.id)
-                    .then(() => {
-                        message.channel.send('Registered')
-                    })
+            .then(async (result) => {
+                if (result.status == 201) {
+                    await GamerAlert.addUserToServer(guildId, message.author.id)
+                }
+                message.channel.send('Registered')
             })
             .catch(error => {
                 if (error.response) {
