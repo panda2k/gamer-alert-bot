@@ -3,8 +3,49 @@ const GamerAlert = require('./gameralert')
 
 const client = new Discord.Client()
 
-let formatDate = date => {
+const formatDate = date => {
     return [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('-')
+}
+
+const mentionToId = mention => mention.slice(3, mention.length - 1)
+
+const round = (number, places) => {
+    let multiplier = Math.pow(10, places)
+
+    return Math.round(number * multiplier) / multiplier
+}
+
+const stringToDate = date => {
+    let startDate
+    let endDate = new Date()
+
+    if (date == 'today') {
+        startDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+    } else if (date == 'week') {
+        startDate = new Date(endDate.getTime() - (604800 * 1000))
+    } else if (date == 'month') {
+        startDate = new Date(endDate.getTime() - (43800 * 60 * 1000))
+    } else if (date.split('-').length == 6) {
+        let splitDate = date.split('-')
+        startDate = new Date(splitDate[0], splitDate[1] - 1, splitDate[2])
+        endDate = new Date(splitDate[3], splitDate[4] - 1, splitDate[5])
+    } else {
+        throw new Error('Invalid date provided')
+    }
+
+    return [startDate, endDate]
+}
+
+const timeElapsedFromString = (startDateString, endDateString) => {
+    let startDate = new Date(startDateString).getTime()
+    let endDate = new Date(endDateString).getTime()
+
+    let elapsedTime = endDate - startDate
+
+    let minutes = Math.floor(elapsedTime / (1000 * 60))
+    let seconds = Math.round((elapsedTime % (1000 * 60)) / 1000)
+
+    return [minutes, seconds]
 }
 
 client.on('ready', () => {
@@ -68,28 +109,23 @@ client.on('message', async message => {
             return 
         }
 
-        let userId = args[0].slice(3, args[0].length - 1)
-        let startDate
-        let endDate = new Date()
+        let userId = mentionToId(args[0])
 
-        if (args[1] == 'today') {
-            startDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-        } else if (args[1] == 'week') {
-            startDate = new Date(endDate.getTime() - (604800 * 1000))
-        } else if (args[1] == 'month') {
-            startDate = new Date(endDate.getTime() - (43800 * 60 * 1000))
-        } else if (args[1].split('-').length == 6) {
-            let splitDate = args[1].split('-')
-            startDate = new Date(splitDate[0], splitDate[1] - 1, splitDate[2])
-            endDate = new Date(splitDate[3], splitDate[4] - 1, splitDate[5])
-        } else {
+        try {
+            var [startDate, endDate] = stringToDate(args[1])
+        } catch (error) {
             message.channel.send('Invalid time period. Time period can be either `today`, `week`, `month` or a custom date range like this: `2020-01-15-2020-01-26`')
-            return
+            return 
         }
+
 
         await GamerAlert.getUserSessions(userId, startDate.getTime(), endDate.getTime())
             .then(result => {
-                message.channel.send(`<@${userId}> has logged ${result.length} sessions between ${formatDate(startDate)} and ${formatDate(endDate)}`)
+                if (args[1] == 'today') {
+                    message.channel.send(`<@${userId}> has logged ${result.length} sessions on ${formatDate(endDate)}`)
+                } else {
+                    message.channel.send(`<@${userId}> has logged ${result.length} sessions between ${formatDate(startDate)} and ${formatDate(endDate)}`)
+                }
             })
             .catch(error => {
                 if (error.response) {
@@ -117,6 +153,78 @@ client.on('message', async message => {
                     message.channel.send(error.response.data.error)
                 } else {
                     message.channel.send(error)
+                }
+            })
+    } else if (command == 'gamestats') {
+        if (args.length != 2) {
+            message.channel.send('Missing arguments. Follow this command format: `?gamestats @personhere <time_period>`. ' + 
+            "`time_period` can either be `mostrecent` (this gives the most recent game's stats), `day`, `week`, `month`, or a custom date range like this: `2020-01-15-2020-01-26`")
+        }
+
+        let userId = mentionToId(args[0])
+
+        let startDate
+        let endDate
+
+        if (args[1] == 'mostrecent') {
+            [startDate, endDate] = stringToDate('month')
+        } else {
+            try {
+                [startDate, endDate] =  stringToDate(args[1])
+            } catch (error) {
+                message.channel.send('Invalid time period. Time period can be either `mostrecent`, `today`, `week`, `month` or a custom date range like this: `2020-01-15-2020-01-26`')    
+                return
+            }
+        }
+
+        await GamerAlert.getUserSessions(userId, startDate, endDate)
+            .then(result => {
+                if (result.length == 0) {
+                    if (args[1] == 'today') {
+                        message.channel.send(`<@${userId}> hasn't logged any games today`)
+                    } else if (args[1] == 'mostrecent') {
+                        message.channel.send(`<@${userId}> has no most recent game because they haven't played in over 30 days`)
+                    } else {
+                        message.channel.send(`<@${userId}> hasn't logged any games between ${formatDate(startDate)} and ${formatDate(endDate)}`)
+                    }
+                    return
+                }
+
+                let games = []
+                if (args[1] == 'mostrecent') {
+                    for (i = 0; i < result.length; i++) {
+                        do {
+                            games = [result[i].events.pop()]
+                        } while (result[i].events.length > 0 && games[0].type != 'game')
+                    }
+                } else {
+                    for (i = 0; i < result.length; i++) {
+                        for (j = 0; j < result[i].events.length; j++) {
+                            if (result[i].events[j].type == 'game') {
+                                games.push(result[i].events[j])
+                            }
+                        }
+                    }
+                }
+
+                for (i = 0; i < games.length; i++) {
+                    let elapsedSeconds
+                    let elapsedMinutes                    
+
+                    [elapsedMinutes, elapsedSeconds] = timeElapsedFromString(games[i].startDate, games[i].endDate)
+
+                    let embed = new Discord.MessageEmbed()
+                        .setTitle(`Game Stats as ${games[i].champion}`)
+                        .setDescription(`Elapsed Time: ${elapsedMinutes}:${elapsedSeconds}\n` +
+                                        `CS/min: ${round(games[i].cs / (elapsedMinutes + elapsedSeconds / 60), 2)}\n` +
+                                        `KDA: ${round((games[i].kills + games[i].assists) / games[i].deaths, 2)}\n\n` + 
+                                        `Kills: ${games[i].kills}\nDeaths: ${games[i].deaths}\n Assists: ${games[i].assists}`
+                                        )
+                        .setURL(`https://www.leagueofgraphs.com/match/na/${games[i].gameId}`)
+                        .setThumbnail(games[i].championImageUrl)
+                        .setFooter('Missing data? This is most likely due to this game being currently played/played before Gamer Alert started saving match data.')
+                    
+                    message.channel.send(embed)
                 }
             })
     }
