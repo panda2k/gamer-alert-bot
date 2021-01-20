@@ -214,8 +214,9 @@ client.on('message', async message => {
                     [elapsedMinutes, elapsedSeconds] = timeElapsedFromString(games[i].startDate, games[i].endDate)
 
                     let embed = new Discord.MessageEmbed()
-                        .setTitle(`Game Stats as ${games[i].champion}`)
-                        .setDescription(`Elapsed Time: ${elapsedMinutes}:${elapsedSeconds}\n` +
+                        .setTitle(`Game Stats as ${games[i].champion} in ${games[i].gameType}`)
+                        .setDescription(`Game Result: ${games[i].gameResult}\n` +
+                                        `Elapsed Time: ${elapsedMinutes}:${elapsedSeconds}\n` +
                                         `CS/min: ${round(games[i].cs / (elapsedMinutes + elapsedSeconds / 60), 2)}\n` +
                                         `KDA: ${round((games[i].kills + games[i].assists) / games[i].deaths, 2)}\n\n` + 
                                         `Kills: ${games[i].kills}\nDeaths: ${games[i].deaths}\n Assists: ${games[i].assists}`
