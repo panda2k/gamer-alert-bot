@@ -1,9 +1,10 @@
 const axios = require('axios').default
 
-const API_URL = 'http://localhost:999/api/v1'
+const API_URL = process.env.API_URL
 
 const requestClient = axios.create({
-    baseURL: API_URL
+    baseURL: API_URL,
+    headers: {'x-api-key': process.env.API_KEY}
 })
 
 const getAllServers = async () => (await requestClient.get(`/servers`)).data

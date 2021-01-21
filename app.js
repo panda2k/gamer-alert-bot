@@ -1,5 +1,6 @@
 const Discord = require('discord.js')
 const GamerAlert = require('./gameralert')
+require('dotenv').config()
 
 const client = new Discord.Client()
 
