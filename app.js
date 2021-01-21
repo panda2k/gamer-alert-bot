@@ -146,7 +146,11 @@ client.on('message', async message => {
             })
             .catch(error => {
                 if (error.response) {
-                    message.channel.send(error.response.data.error)
+                    if (error.response.status == 404) {
+                        message.channel.send(`<@${userId}> is not yet registered.`)
+                    } else {
+                        message.channel.send(error.response.data)
+                    }
                 } else {
                     message.channel.send(error)
                 }
@@ -247,7 +251,11 @@ client.on('message', async message => {
             })
             .catch(error => {
                 if (error.response) {
-                    message.channel.send(error.response.data) 
+                    if (error.response.status == 404) {
+                        message.channel.send(`<@${userId}> is not yet registered.`)
+                    } else {
+                        message.channel.send(error.response.data)
+                    }
                 } else {
                     message.channel.send(error)
                 }
