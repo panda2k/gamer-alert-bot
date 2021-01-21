@@ -237,3 +237,4 @@ client.on('message', async message => {
 })
 
 client.login(process.env.GAMER_BOT_SECRET)
+console.log(`Using API with URL: ${process.env.API_URL}`)
