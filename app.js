@@ -70,6 +70,8 @@ client.on('message', async message => {
                             return
                         })
                 }
+            } else {
+                console.log(error)
             }
         })
 
