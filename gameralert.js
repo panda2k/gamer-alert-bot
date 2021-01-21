@@ -1,10 +1,11 @@
 const axios = require('axios').default
+require('dotenv').config()
 
 const API_URL = process.env.API_URL
 
 const requestClient = axios.create({
     baseURL: API_URL,
-    headers: {'x-api-key': process.env.API_KEY}
+    headers: {'x-api-key': process.env.API_KEY || 'none'}
 })
 
 const getAllServers = async () => (await requestClient.get(`/servers`)).data
