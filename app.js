@@ -69,6 +69,13 @@ client.on('message', async message => {
                             prefix = '?'
                             return
                         })
+                        .catch(error => {
+                            if (error.response) {
+                                console.log(error.response.data) 
+                            } else {
+                                console.log(error)
+                            }
+                        })
                 }
             } else {
                 console.log(error)
@@ -94,6 +101,13 @@ client.on('message', async message => {
             .then(async (result) => {
                 if (result.status == 201) {
                     await GamerAlert.addUserToServer(guildId, message.author.id)
+                        .catch(error => {
+                            if (error.response) {
+                                message.channel.send(error.response.data)
+                            } else {
+                                message.channel.send(error)
+                            }
+                        })
                 }
                 message.channel.send('Registered')
             })
@@ -229,6 +243,13 @@ client.on('message', async message => {
                         .setFooter('Missing data? This is most likely due to this game being currently played/played before Gamer Alert started saving match data.')
                     
                     message.channel.send(embed)
+                }
+            })
+            .catch(error => {
+                if (error.response) {
+                    message.channel.send(error.response.data) 
+                } else {
+                    message.channel.send(error)
                 }
             })
     }
