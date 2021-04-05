@@ -1,17 +1,28 @@
 {
-  "name": "discord-gamer-alert",
+  "name": "gamer-alert-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "build": "tsc",
+    "start": "node build/local.js",
+    "dev": "concurrently \"tsc -w\" \"nodemon build/local.js\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panda2k/gamer-alert-bot.git"
   },
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/panda2k/gamer-alert-bot/issues"
+  },
+  "homepage": "https://github.com/panda2k/gamer-alert-bot#readme",
   "dependencies": {
-    "axios": "^0.21.1",
-    "discord.js": "^12.5.1",
-    "dotenv": "^8.2.0"
+    "@types/body-parser": "^1.19.0",
+    "@types/express": "^4.17.11",
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1"
   }
 }
