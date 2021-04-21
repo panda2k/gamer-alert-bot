@@ -2,6 +2,10 @@ import Router from 'express'
 import nacl = require('tweetnacl')
 import bodyParser = require('body-parser')
 import got from 'got'
+import gameralert = require('../utils/gameralert')
+import { FinishedGame } from '../types/gamer_alert_interfaces'
+import league = require('../utils/league')
+import { DateTime } from 'luxon'
 
 const PUBLIC_KEY = String(process.env.APPLICATION_PUBLIC_KEY)
 
@@ -16,6 +20,47 @@ const respondToInteraction = async(interactionId: string, interactionToken: stri
     })
 
     return body
+}
+
+const followupInteraction = async(interactionToken: string, data: Object) => {
+    const { body } = await got.post(`https://discord.come/api/v8/webhooks/${process.env.APPLICATION_ID}/${interactionToken}`, {
+        json: data,
+        searchParams: {
+            wait: true
+        }
+    })
+
+    return body
+}
+
+const createGameEmbed = (game: FinishedGame, dataDragonVersion: string, serverTimezone: string) => {
+    let gameResult: string 
+
+    if (game.win) {
+        gameResult = 'Win'
+    } else {
+        gameResult = 'Loss'
+    }
+
+    const gameTime = game.end_time - game.start_time
+    const elapsedMinutes = Math.floor(gameTime / (1000 * 60))
+    const elapsedSeconds = Math.floor(gameTime % (1000 * 60) / 1000)
+
+    return {
+        title: `Game Stats as ${game.champion} in ${game.game_type}`,
+        description: `Date: ${DateTime.fromMillis(Number(game.start_time), { zone: serverTimezone }).toLocaleString(DateTime.DATETIME_FULL)}
+        Game Result: ${gameResult}
+        Elapsed Time: ${elapsedMinutes}:${elapsedSeconds}\n
+        CS/min: ${(game.cs / (elapsedMinutes + elapsedSeconds / 60)).toFixed(2)}
+        KDA: ${((game.kills + game.assists) / game.deaths).toFixed(2)}
+        Kills: ${game.kills}
+        Deaths: ${game.deaths}
+        Assists: ${game.assists}`,
+        url: `https://www.leagueofgraphs.com/match/na/${game.match_id}`,
+        thumbnail: {
+            url: `http://ddragon.leagueoflegends.com/cdn/${dataDragonVersion}/img/champion/${game.champion_picture}`
+        }
+    }
 }
 
 interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req, res) => {
@@ -36,18 +81,73 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
 
     const data = JSON.parse(rawBody.toString())
 
-    console.log(data)
+    //console.log(JSON.stringify(data))
 
     if (data.type == 1) { // needed for verification
         return res.json({type: 1})
     } else if (data.data.name == 'help') {
         await respondToInteraction(data.id, data.token, {
-            content: "IT WORKED!!!"
+            content: "View a list of commands by typing / and clicking the FBI badge on the left side of the popup"
         })
 
         return res.status(200)
     } else if (data.data.name == 'gamestats') {
-        
+        await gameralert.getGames(data.guild_id, data.data.options[0].value, data.data.options[1].value)
+            .then(async (games) => {
+                if (games.length == 0) {
+                    return await respondToInteraction(data.id, data.token, {
+                        content: "They've logged no games in the specified time period"
+                    })
+                }
+
+                let embeds: Array<Object> = []
+
+                const dataDragonVersion = await league.getLatestDataDragonVersion()
+                const serverTimezone = (await gameralert.getServer(data.guild_id)).time_zone || 'Etc/GMT'
+
+                for (let i = 0; i < games.length; i++) {
+                    embeds.push(createGameEmbed(games[i], dataDragonVersion, serverTimezone))
+                }
+
+                console.log(JSON.stringify({
+                    embeds: embeds.slice(0, 10)
+                }))
+
+                await respondToInteraction(data.id, data.token, {
+                    embeds: embeds.slice(0, 10)
+                })
+
+                if (embeds.length >= 10) {
+                    for (let i = 1; i < Math.ceil(embeds.length / 10); i++) {
+                        await followupInteraction(data.token, {
+                            embeds: embeds.slice(10 * i, 10 * (i + 1))
+                        })
+                    }
+                }
+            })
+            .catch(async error => {
+                if (error.response) {
+                    console.log(error.response.body)
+                } else {
+                    console.log(error)
+                }
+
+                await respondToInteraction(data.id, data.token, {
+                    content: 'Error when getting game data. Try again in a few seconds'
+                })
+            })
+    } else if (data.data.name == 'timezone') {
+        await gameralert.updateTimezone(data.guild_id, data.data.options[0].value)
+            .then(async() => {
+                await respondToInteraction(data.id, data.token, {
+                    content: `Updated server timezone to ${data.data.options[0].value}`
+                })
+            })
+            .catch(async() => {
+                await respondToInteraction(data.id, data.token, {
+                    content: `Invalid timezone. Check here for a list of timezone: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones`
+                })
+            })
     }
 })
 
