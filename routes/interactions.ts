@@ -148,6 +148,65 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                     content: `Invalid timezone. Check here for a list of timezone: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones`
                 })
             })
+    } else if (data.data.name == 'register') {
+        await gameralert.createUser(data.member.user.id)
+            .then(() => {
+                return true
+            }) 
+            .catch(error => {
+                if (error.response) {
+                    if (error.response.body.error.includes('User with Discord id')) {
+                        return true
+                    } else {
+                        return false
+                    }
+                } else {
+                    return false
+                }
+            })
+            .then(async result => {
+                if (result) {
+                    await gameralert.setLeagueUsername(data.member.user.id, data.data.options[0].value)
+                    .then(async() => {
+                        await gameralert.addUserToServer(data.member.user.id, data.guild_id)
+                            .then(async() => {
+                                await respondToInteraction(data.id, data.token, {
+                                    content: 'Successfully registered'
+                                })
+                            })
+                            .catch(async error => {
+                                if (error.response) {
+                                    if (error.response.body.error.includes('already registered')) {
+                                        return await respondToInteraction(data.id, data.token, {
+                                            content: `You are already registered in this server. However, your league name was still set to ${data.data.options[0].value}`
+                                        })
+                                    }
+                                }
+                                console.log(error)
+                                await respondToInteraction(data.id, data.token, {
+                                    content: 'Error when registering user'
+                                })
+                            })
+                    })
+                    .catch(async error => {
+                        if (error.response) {
+                            await respondToInteraction(data.id, data.token, {
+                                content: `Error: ${error.response.body.error}`
+                            })
+                        } else {
+                            console.log(error)
+                            await respondToInteraction(data.id, data.token, {
+                                content: 'Error when setting league username'
+                            })
+                        }
+                    })
+                } else {
+                    await respondToInteraction(data.id, data.token, {
+                        content: 'Error when creating user'
+                    })
+                }
+
+            })
     }
 })
 

@@ -63,6 +63,18 @@ const commands = [
                 required: true
             }
         ]
+    },
+    {
+        name: "register",
+        description: "Register yourself with Gamer Alert. You must register in every server you wish to be monitored in.",
+        options: [
+            {
+                name: "leaguename",
+                description: "Your league username. Case insensitive",
+                type: 3,
+                required: true
+            }
+        ]
     }
 ];
 

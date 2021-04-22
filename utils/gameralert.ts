@@ -110,6 +110,30 @@ const updateTimezone = async(serverId: number, timezone: string): Promise<string
     return body
 }
 
+const setLeagueUsername = async(discordId: number, leagueName: string): Promise<string> => {
+    const { body } = await client.post(`users/${discordId}/league-username`, {
+        json: { leagueName: leagueName }
+    })
+
+    return body
+}
+
+const addUserToServer = async(discordId: number, serverId: number): Promise<string> => {
+    const { body } = await client.post(`users/${discordId}/servers`, {
+        json: { serverId: serverId }
+    })
+
+    return body
+}
+
+const createUser = async(discordId: number): Promise<string> => {
+    const { body } = await client.post('users', {
+        json: { discordId: discordId }
+    })
+
+    return body
+}
+
 export = {
     getFullServers,
     getUserSessions,
@@ -122,5 +146,8 @@ export = {
     deleteGameJob,
     getGames,
     updateTimezone,
-    getServer
+    getServer,
+    setLeagueUsername,
+    addUserToServer,
+    createUser
 }
