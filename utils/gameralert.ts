@@ -95,16 +95,16 @@ const deleteGameJob = async(id: string): Promise<string> => {
     return body
 }
 
-const getGames = async(serverId: number, discordId: number, timerange: string): Promise<Array<types.FinishedGame>> => {
+const getGames = async(requesterId: number, discordId: number, timerange: string): Promise<Array<types.FinishedGame>> => {
     const { body } = await client(`users/${discordId}/games`, {
-        searchParams: { timespan: timerange, serverId: serverId }
+        searchParams: { timespan: timerange, requesterId: requesterId }
     })
 
     return body as unknown as Array<types.FinishedGame>
 }
 
-const updateTimezone = async(serverId: number, timezone: string): Promise<string> => {
-    const { body } = await client.post(`servers/${serverId}/timezone`, 
+const updateTimezone = async(discordId: number, timezone: string): Promise<string> => {
+    const { body } = await client.post(`users/${discordId}/time-zone`, 
     { json: { timezone: timezone } })
 
     return body
@@ -134,6 +134,14 @@ const createUser = async(discordId: number): Promise<string> => {
     return body
 }
 
+const setTimeLimit = async(discordId: number, timeLimit: number): Promise<string> => {
+    const { body } = await client.post(`users/${discordId}/time-limit`, {
+        json: { timeLimit: timeLimit }
+    })
+
+    return body
+}
+
 export = {
     getFullServers,
     getUserSessions,
@@ -149,5 +157,6 @@ export = {
     getServer,
     setLeagueUsername,
     addUserToServer,
-    createUser
+    createUser,
+    setTimeLimit
 }

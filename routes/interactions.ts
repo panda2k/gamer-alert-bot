@@ -92,7 +92,7 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
 
         return res.status(200)
     } else if (data.data.name == 'gamestats') {
-        await gameralert.getGames(data.guild_id, data.data.options[0].value, data.data.options[1].value)
+        await gameralert.getGames(data.member.user.id, data.data.options[0].value, data.data.options[1].value)
             .then(async (games) => {
                 if (games.length == 0) {
                     return await respondToInteraction(data.id, data.token, {
@@ -108,10 +108,6 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                 for (let i = 0; i < games.length; i++) {
                     embeds.push(createGameEmbed(games[i], dataDragonVersion, serverTimezone))
                 }
-
-                console.log(JSON.stringify({
-                    embeds: embeds.slice(0, 10)
-                }))
 
                 await respondToInteraction(data.id, data.token, {
                     embeds: embeds.slice(0, 10)
@@ -137,7 +133,7 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                 })
             })
     } else if (data.data.name == 'timezone') {
-        await gameralert.updateTimezone(data.guild_id, data.data.options[0].value)
+        await gameralert.updateTimezone(data.member.user.id, data.data.options[0].value)
             .then(async() => {
                 await respondToInteraction(data.id, data.token, {
                     content: `Updated server timezone to ${data.data.options[0].value}`
@@ -206,6 +202,19 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                     })
                 }
 
+            })
+    } else if (data.data.name = "timelimit") {
+        await gameralert.setTimeLimit(data.member.user.id, data.data.options[0].value)
+            .then(async() => {
+                await respondToInteraction(data.id, data.token, {
+                    content: 'Successfully changed time limit'
+                })
+            })
+            .catch(async error => {
+                console.log(error)
+                await respondToInteraction(data.id, data.token, {
+                    content: 'Error when updating time limit'
+                })
             })
     }
 })

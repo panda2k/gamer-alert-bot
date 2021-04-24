@@ -75,6 +75,18 @@ const commands = [
                 required: true
             }
         ]
+    },
+    {
+        name: "timelimit",
+        description: "Set a goal for the max amount of time you want to spend playing league everyday.",
+        options: [
+            {
+                name: "timelimit",
+                description: "A daily time limit in minutes",
+                type: 4,
+                required: true
+            }
+        ]
     }
 ];
 
