@@ -43,3 +43,5 @@ yarn.lock
 build
 
 .well-known
+.serverless
+serverless.yml
