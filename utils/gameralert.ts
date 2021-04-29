@@ -2,7 +2,7 @@ import got from 'got'
 require('dotenv').config()
 import types = require('../types/gamer_alert_interfaces')
 
-const BASE_URL = 'http://localhost:8888/api/v2/'
+const BASE_URL = process.env.BASE_URL
 
 const client = got.extend({
     prefixUrl: BASE_URL,
@@ -11,6 +11,14 @@ const client = got.extend({
     },
     responseType: 'json'
 })
+
+const createServer = async(serverId: number): Promise<string> => {
+    const { body } = await client.post('servers', {
+        json: { serverId: serverId }
+    })
+
+    return body
+}
 
 const getFullServers = async(): Promise<Array<types.PopulatedServer>> => {
     return (await client('servers/full')).body as unknown as Array<types.PopulatedServer>
@@ -158,5 +166,6 @@ export = {
     setLeagueUsername,
     addUserToServer,
     createUser,
-    setTimeLimit
+    setTimeLimit,
+    createServer
 }
