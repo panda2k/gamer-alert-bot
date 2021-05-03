@@ -8,7 +8,9 @@ export interface Server {
 
 export interface User {
     discord_id: number,
-    league_username: string
+    league_username: string,
+    daily_time_limit: number|null,
+    time_zone: string|null
 }
 
 export interface Session {
@@ -64,4 +66,9 @@ export interface GameJob {
     game_id: string,
     league_name: string,
     match_id: number
+}
+
+export interface FetchedGames {
+    timezone: string,
+    games: Array<FinishedGame>
 }

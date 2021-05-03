@@ -33,7 +33,7 @@ const followupInteraction = async(interactionToken: string, data: Object) => {
     return body
 }
 
-const createGameEmbed = (game: FinishedGame, dataDragonVersion: string, serverTimezone: string) => {
+const createGameEmbed = (game: FinishedGame, dataDragonVersion: string, timezone: string) => {
     let gameResult: string 
 
     if (game.win) {
@@ -48,11 +48,11 @@ const createGameEmbed = (game: FinishedGame, dataDragonVersion: string, serverTi
 
     return {
         title: `Game Stats as ${game.champion} in ${game.game_type}`,
-        description: `Date: ${DateTime.fromMillis(Number(game.start_time), { zone: serverTimezone }).toLocaleString(DateTime.DATETIME_FULL)}
+        description: `Date: ${DateTime.fromMillis(Number(game.start_time), { zone: timezone }).toLocaleString(DateTime.DATETIME_FULL)}
         Game Result: ${gameResult}
-        Elapsed Time: ${elapsedMinutes}:${elapsedSeconds}\n
+        Elapsed Time: ${elapsedMinutes}:${('0' + elapsedSeconds).slice(-2)}\n
         CS/min: ${(game.cs / (elapsedMinutes + elapsedSeconds / 60)).toFixed(2)}
-        KDA: ${((game.kills + game.assists) / game.deaths).toFixed(2)}
+        KDA: ${((game.kills + game.assists) / (game.deaths == 0 ? 1 : game.deaths)).toFixed(2)}
         Kills: ${game.kills}
         Deaths: ${game.deaths}
         Assists: ${game.assists}`,
@@ -81,8 +81,6 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
 
     const data = JSON.parse(rawBody.toString())
 
-    //console.log(JSON.stringify(data))
-
     if (data.type == 1) { // needed for verification
         return res.json({type: 1})
     } else if (data.data.name == 'help') {
@@ -93,8 +91,8 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
         return res.status(200)
     } else if (data.data.name == 'gamestats') {
         await gameralert.getGames(data.member.user.id, data.data.options[0].value, data.data.options[1].value)
-            .then(async (games) => {
-                if (games.length == 0) {
+            .then(async (result) => {
+                if (result.games.length == 0) {
                     return await respondToInteraction(data.id, data.token, {
                         content: "They've logged no games in the specified time period"
                     })
@@ -103,10 +101,9 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                 let embeds: Array<Object> = []
 
                 const dataDragonVersion = await league.getLatestDataDragonVersion()
-                const serverTimezone = (await gameralert.getServer(data.guild_id)).time_zone || 'Etc/GMT'
 
-                for (let i = 0; i < games.length; i++) {
-                    embeds.push(createGameEmbed(games[i], dataDragonVersion, serverTimezone))
+                for (let i = 0; i < result.games.length; i++) {
+                    embeds.push(createGameEmbed(result.games[i], dataDragonVersion, result.timezone))
                 }
 
                 await respondToInteraction(data.id, data.token, {

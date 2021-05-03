@@ -103,12 +103,12 @@ const deleteGameJob = async(id: string): Promise<string> => {
     return body
 }
 
-const getGames = async(requesterId: number, discordId: number, timerange: string): Promise<Array<types.FinishedGame>> => {
+const getGames = async(requesterId: number, discordId: number, timerange: string): Promise<types.FetchedGames> => {
     const { body } = await client(`users/${discordId}/games`, {
         searchParams: { timespan: timerange, requesterId: requesterId }
     })
 
-    return body as unknown as Array<types.FinishedGame>
+    return body as unknown as types.FetchedGames
 }
 
 const updateTimezone = async(discordId: number, timezone: string): Promise<string> => {
@@ -150,6 +150,12 @@ const setTimeLimit = async(discordId: number, timeLimit: number): Promise<string
     return body
 }
 
+const getUser = async(discordId: number): Promise<types.User> => {
+    const { body } = await client.get(`users/${discordId}`)
+
+    return body as unknown as types.User
+}
+
 export = {
     getFullServers,
     getUserSessions,
@@ -167,5 +173,6 @@ export = {
     addUserToServer,
     createUser,
     setTimeLimit,
-    createServer
+    createServer,
+    getUser
 }
