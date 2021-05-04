@@ -33,6 +33,14 @@ const followupInteraction = async(interactionToken: string, data: Object) => {
     return body
 }
 
+const prettyTime = (time: number) => {
+    const days = Math.floor(time / (1000 * 60 * 60 * 24))
+    const hours = Math.floor(time / (1000 * 60 * 60) % 24)
+    const minutes = Math.floor(time / (1000 * 60) % 60)
+
+    return (days != 0 ? days.toString() + ' days' : '') + (days != 0 ? ', ' : '') + (hours != 0 ? hours.toString() + ' hours' : '') + (hours != 0 || days != 0 ? ' and ' : '') + minutes.toString() + ' minutes'
+}
+
 const createGameEmbed = (game: FinishedGame, dataDragonVersion: string, timezone: string) => {
     let gameResult: string 
 
@@ -120,7 +128,14 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
             })
             .catch(async error => {
                 if (error.response) {
-                    console.log(error.response.body)
+                    if (error.response.statusCode == 404) {
+                        await respondToInteraction(data.id, data.token, {
+                            content: 'They have no recorded games because they have not registered with Gamer Alert yet'
+                        })
+                        return
+                    } else {
+                        console.log(error.response.body)
+                    }
                 } else {
                     console.log(error)
                 }
@@ -218,7 +233,7 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                     })
                 }
             })
-    } else if (data.data.name = "timelimit") {
+    } else if (data.data.name == "timelimit") {
         await gameralert.setTimeLimit(data.member.user.id, data.data.options[0].value)
             .then(async() => {
                 await respondToInteraction(data.id, data.token, {
@@ -230,6 +245,40 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                 await respondToInteraction(data.id, data.token, {
                     content: 'Error when updating time limit'
                 })
+            })
+    } else if (data.data.name == "playtime") {
+        await gameralert.getGames(data.member.user.id, data.data.options[0].value, data.data.options[1].value)
+            .then(async result => {
+                let playTime = 0
+
+                for (let i = 0; i < result.games.length; i++) {
+                    playTime += (result.games[i].end_time - result.games[i].start_time)
+                }
+
+                const timeString = prettyTime(playTime)
+
+                await respondToInteraction(data.id, data.token, {
+                    content: `They've played ${timeString} of League in the specified time period`
+                })
+            })
+            .catch(async error => {
+                if (error.response) {
+                    if (error.response.statusCode == 404) {
+                        await respondToInteraction(data.id, data.token, {
+                            content: 'No play time logged because they have not yet registered for Gamer Alert'
+                        })
+                    } else {
+                        console.log(error.response.body.erro)
+                        await respondToInteraction(data.id, data.token, {
+                            content: 'Error when fetching playtime'
+                        })
+                    }
+                } else {
+                    console.log(error)
+                    await respondToInteraction(data.id, data.token, {
+                        content: 'Error when fetching playtime'
+                    })
+                }
             })
     }
 })

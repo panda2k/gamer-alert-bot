@@ -87,13 +87,53 @@ const commands = [
                 required: true
             }
         ]
-    }
+    },
+    {
+        name: "playtime",
+        description: "View the total play time of a person within a specified time range",
+        options: [
+            {
+                name: "target_user",
+                description: "The user whose play time you want to fetch",
+                type: 6,
+                required: true
+            },
+            {
+                name: "timespan",
+                description: "Calculate playtime from all games within this range",
+                type: 3,
+                required: true,
+                choices: [
+                    {
+                        name: "Today",
+                        value: "today"
+                    },
+                    {
+                        name: "Yesterday",
+                        value: "yesterday"
+                    },
+                    {
+                        name: "Last 7 Days",
+                        value: "week"
+                    },
+                    {
+                        name: "Last 30 Days",
+                        value: "month"
+                    },
+                    {
+                        name: "All Games",
+                        value: "all"
+                    }
+                ]
+            }
+        ]
+    },
 ];
 
 
 (async() => {
     for (let i = 0; i < commands.length; i++) {
-        const result = await got.post(BASE_URL, {
+        await got.post(BASE_URL, {
             json: commands[i],
             responseType: 'json',
             headers: { 'Authorization': `Bot ${process.env.BOT_TOKEN}` }
@@ -104,5 +144,7 @@ const commands = [
             .catch(error => {
                 console.log(JSON.stringify(error.response.body))
             })
+        
+        await new Promise(resolve => setTimeout(resolve, 7500))
     }
 })()
