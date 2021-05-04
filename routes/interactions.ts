@@ -89,6 +89,8 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
 
     const data = JSON.parse(rawBody.toString())
 
+    //console.log(JSON.stringify(data)) // optional log statement
+
     if (data.type == 1) { // needed for verification
         return res.json({type: 1})
     } else if (data.data.name == 'help') {
@@ -170,7 +172,8 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
             })
             .then(async(result) => {
                 if (result) {
-                    await gameralert.createUser(data.member.user.id)
+                    const discordId = data.data.options[1] ? data.data.options[1].value : data.member.user.id
+                    await gameralert.createUser((discordId))
                     .then(() => {
                         return true
                     }) 
@@ -187,19 +190,19 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                     })
                     .then(async result => {
                         if (result) {
-                            await gameralert.setLeagueUsername(data.member.user.id, data.data.options[0].value)
+                            await gameralert.setLeagueUsername(discordId, data.data.options[0].value)
                             .then(async() => {
-                                await gameralert.addUserToServer(data.member.user.id, data.guild_id)
+                                await gameralert.addUserToServer(discordId, data.guild_id)
                                     .then(async() => {
                                         await respondToInteraction(data.id, data.token, {
-                                            content: 'Successfully registered'
+                                            content: `Successfully registered <@${discordId}>`
                                         })
                                     })
                                     .catch(async error => {
                                         if (error.response) {
                                             if (error.response.body.error.includes('already registered')) {
                                                 return await respondToInteraction(data.id, data.token, {
-                                                    content: `You are already registered in this server. However, your league name was still set to ${data.data.options[0].value}`
+                                                    content: `<@${discordId}> is already registered in this server. However, their league name was still set to ${data.data.options[0].value}`
                                                 })
                                             }
                                         }

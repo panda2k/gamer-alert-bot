@@ -66,14 +66,20 @@ const commands = [
     },
     {
         name: "register",
-        description: "Register yourself with Gamer Alert. You must register in every server you wish to be monitored in.",
+        description: "Register someone with Gamer Alert. People is only monitored in server's they're registered in.",
         options: [
             {
                 name: "leaguename",
-                description: "Your league username. Case insensitive",
+                description: "The target's league username. Case insensitive",
                 type: 3,
                 required: true
-            }
+            },
+            {
+                name: "target_user",
+                description: "The user you want to register. Leave this blank if you are registering yourself.",
+                type: 6,
+                required: false
+            },
         ]
     },
     {
