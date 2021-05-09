@@ -11,10 +11,10 @@ const PUBLIC_KEY = String(process.env.APPLICATION_PUBLIC_KEY)
 
 const interactionRouter = Router()
 
-const respondToInteraction = async(interactionId: string, interactionToken: string, data: Object) => {
+const respondToInteraction = async(interactionId: string, interactionToken: string, data: Object, responseType?: number) => {
     const { body } = await got.post(`https://discord.com/api/v8/interactions/${interactionId}/${interactionToken}/callback`, {
         json: {
-            type: 4,
+            type: responseType || 4,
             data: data
         }
     })
@@ -22,12 +22,9 @@ const respondToInteraction = async(interactionId: string, interactionToken: stri
     return body
 }
 
-const followupInteraction = async(interactionToken: string, data: Object) => {
-    const { body } = await got.post(`https://discord.come/api/v8/webhooks/${process.env.APPLICATION_ID}/${interactionToken}`, {
-        json: data,
-        searchParams: {
-            wait: true
-        }
+const updateInteractionMessage = async(appId: string, interactionToken: string, data: Object) => {
+    const { body } = await got.patch(`https://discord.com/api/v8/webhooks/${appId}/${interactionToken}/messages/@original`, {
+        json: data
     })
 
     return body
@@ -100,6 +97,10 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
 
         return res.status(200)
     } else if (data.data.name == 'gamestats') {
+        await respondToInteraction(data.id, data.token, { // ack a response as games are processed
+            content: ''
+        }, 5)
+
         await gameralert.getGames(data.member.user.id, data.data.options[0].value, data.data.options[1].value)
             .then(async (result) => {
                 if (result.games.length == 0) {
@@ -116,17 +117,17 @@ interactionRouter.post('', bodyParser.raw({type: 'application/json'}), async(req
                     embeds.push(createGameEmbed(result.games[i], dataDragonVersion, result.timezone))
                 }
 
-                await respondToInteraction(data.id, data.token, {
-                    embeds: embeds.slice(0, 10)
+                await updateInteractionMessage(data.application_id, data.token, {
+                    embeds: embeds
                 })
 
-                if (embeds.length >= 10) {
+                /*if (embeds.length >= 10) {
                     for (let i = 1; i < Math.ceil(embeds.length / 10); i++) {
                         await followupInteraction(data.token, {
                             embeds: embeds.slice(10 * i, 10 * (i + 1))
                         })
                     }
-                }
+                }*/ // fix later
             })
             .catch(async error => {
                 if (error.response) {
